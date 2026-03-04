@@ -1,0 +1,72 @@
+1. High-Level System Architecture
+The system is divided into two main pipelines: the Data Ingestion Pipeline (scheduled daily) and the Inference Pipeline (real-time user queries).
+
+Core Components:
+Scraper (BeautifulSoup/Playwright): Targets specific Groww scheme pages to extract factual fields (NAV, Expense Ratio, etc.).
+
+Vector Database (ChromaDB): Stores the extracted facts as embeddings for semantic search.
+
+Scheduler (GitHub Actions/Cron): Triggers the scraper every 24 hours to ensure the "Last Updated" timestamp and prices are current.
+
+LLM (Gemini API): Acts as the reasoning engine to synthesize concise, factual answers.
+
+
+2. The Data Ingestion Flow (Daily Scheduler)
+This flow ensures we aren't using stale data. By scraping once a day, we stay within Groww's "public source" limits without hammering their servers.
+
+Trigger: Scheduler starts the process (e.g., 9:00 AM IST after NAV updates).
+
+Scrape: Extracts data from the 5 Groww URLs.
+
+Cleanse: Removes HTML noise; formats data into a clean JSON/Markdown structure.
+
+compulsary data that needs to be scrapped:
+“Expense ratio ”, “ELSS lock-in ”, “Minimum SIP”, “Exit load”, “Riskometer/benchmark”, “How to download capital-gains statement",
+"Portfolio Holdings","Historic Returns",AUM (Assets Under Management),
+Fund Manager (name, tenure),
+Inception Date,
+Category (Equity Flexi Cap),Peer funds table (1Y/3Y returns, size),
+Riskometer (Very High),
+Allocation breakdown (Equity %, Debt %, Cash %),
+SIP Calculator values,
+Ratings (e.g., CRISIL rank)
+
+Upsert: Updates the Vector DB with new values, overwriting old ones to prevent "hallucinating" old prices.
+
+3. The User Query Flow (RAG & Guardrails)
+This is where the "Chat" happens. We use a system-level guardrail to filter out investment advice before the LLM even sees the context.
+
+Step 1: PII/Advice Filter: A lightweight check to see if the user is asking "Should I buy?" or sharing a PAN card.
+
+Step 2: Context Retrieval: Fetch the specific scheme details from ChromaDB based on the user's query.
+
+Step 3: Prompt Construction: * Context: "Quant Small Cap Fund: Expense Ratio 0.7%, Exit Load 1%..."
+
+Instruction: "Answer in <3 sentences. Use only context. Link: [URL]. No advice."
+
+Step 4: Gemini Generation: Gemini outputs the final formatted response.
+
+4. Cursor-Ready Project Structure
+To help you build this in Cursor, use this folder structure. It allows the AI to "understand" where the logic resides.
+
+mf-assistant/
+├── .github/workflows/  # Daily Scheduler (GitHub Actions)
+├── data/               # Local cache of scraped JSONs
+├── db/                 # ChromaDB persistent storage
+├── src/
+│   ├── scraper.py      # Groww scraping logic (BeautifulSoup)
+│   ├── ingest.py       # Embedding logic & DB updates
+│   ├── processor.py    # Guardrails (PII/Advice detection)
+│   ├── llm_service.py  # Gemini API integration
+│   └── app.py          # Streamlit UI (Tiny UI)
+├── requirements.txt    # langchain-google-genai, chromadb, streamlit
+└── .env                # GEMINI_API_KEY
+
+5. Key Constraints Implementation
+
+Constraint	Technical Implementation
+No Advice	"System Prompt: ""If the user asks for a recommendation, reply with 'I cannot provide investment advice' and link to an educational page."""
+Citations	"Every metadata object in the Vector DB includes a source_url field, which is appended to every LLM response."
+Factual Only	"The LLM is set to temperature=0 to prevent ""creative"" hallucinations."
+Daily Freshness	"The Last updated from sources string is pulled from the file system's ""Last Modified"" timestamp of the vector store."
+

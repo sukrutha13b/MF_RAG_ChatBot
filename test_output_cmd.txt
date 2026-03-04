@@ -1,0 +1,60 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.4, pytest-9.0.2, pluggy-1.6.0 -- C:\Python311\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Projects\Cursor_projects\MF_RAG_chatbot
+plugins: anyio-4.12.1, langsmith-0.7.11
+collecting ... collected 4 items
+
+tests/test_app.py::test_app_smoke ERROR                                  [ 25%]
+tests/test_app.py::test_app_chat_input_exists ERROR                      [ 50%]
+tests/test_app.py::test_sidebar_info_exists ERROR                        [ 75%]
+tests/test_app.py::test_app_execution_flow ERROR                         [100%]
+
+=================================== ERRORS ====================================
+______________________ ERROR at setup of test_app_smoke _______________________
+file D:\Projects\Cursor_projects\MF_RAG_chatbot\tests\test_app.py, line 17
+  def test_app_smoke(mock_app_deps):
+file D:\Projects\Cursor_projects\MF_RAG_chatbot\tests\test_app.py, line 9
+  @pytest.fixture
+  def mock_app_deps(mocker):
+E       fixture 'mocker' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, mock_app_deps, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+D:\Projects\Cursor_projects\MF_RAG_chatbot\tests\test_app.py:9
+________________ ERROR at setup of test_app_chat_input_exists _________________
+file D:\Projects\Cursor_projects\MF_RAG_chatbot\tests\test_app.py, line 25
+  def test_app_chat_input_exists(mock_app_deps):
+file D:\Projects\Cursor_projects\MF_RAG_chatbot\tests\test_app.py, line 9
+  @pytest.fixture
+  def mock_app_deps(mocker):
+E       fixture 'mocker' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, mock_app_deps, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+D:\Projects\Cursor_projects\MF_RAG_chatbot\tests\test_app.py:9
+_________________ ERROR at setup of test_sidebar_info_exists __________________
+file D:\Projects\Cursor_projects\MF_RAG_chatbot\tests\test_app.py, line 33
+  def test_sidebar_info_exists(mock_app_deps):
+file D:\Projects\Cursor_projects\MF_RAG_chatbot\tests\test_app.py, line 9
+  @pytest.fixture
+  def mock_app_deps(mocker):
+E       fixture 'mocker' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, mock_app_deps, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+D:\Projects\Cursor_projects\MF_RAG_chatbot\tests\test_app.py:9
+__________________ ERROR at setup of test_app_execution_flow __________________
+file D:\Projects\Cursor_projects\MF_RAG_chatbot\tests\test_app.py, line 40
+  def test_app_execution_flow(mocker):
+E       fixture 'mocker' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, mock_app_deps, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+D:\Projects\Cursor_projects\MF_RAG_chatbot\tests\test_app.py:40
+=========================== short test summary info ===========================
+ERROR tests/test_app.py::test_app_smoke
+ERROR tests/test_app.py::test_app_chat_input_exists
+ERROR tests/test_app.py::test_sidebar_info_exists
+ERROR tests/test_app.py::test_app_execution_flow
+============================== 4 errors in 0.65s ==============================

@@ -1,0 +1,24 @@
+# ============================================================
+# MF RAG Chatbot - Dependencies
+# Phase 1: Environment & Project Foundation
+# ============================================================
+
+# --- Web Scraping (Phase 2) ---
+playwright>=1.40.0
+
+# --- Vector Database (Phase 3) ---
+pinecone-client>=3.0.0
+
+# --- LLM & Embeddings (Phase 3 & 4) ---
+langchain>=0.2.0
+langchain-google-genai>=1.0.0
+langchain-pinecone>=0.1.0
+
+# --- Environment Management ---
+python-dotenv>=1.0.0
+
+# --- Frontend UI (Phase 5) ---
+streamlit>=1.30.0
+
+# --- Testing ---
+pytest>=8.0.0

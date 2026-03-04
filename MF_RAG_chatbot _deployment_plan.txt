@@ -1,0 +1,122 @@
+Phase 1: Environment & Project Foundation
+This phase sets up the directory structure and dependencies.
+Setup
+•	Initialize the folder structure including src/, data/, and .github/workflows/
+Dependencies
+•	Update requirements.txt to include: playwright, pinecone-client, langchain-google-genai, pytest, and streamlit
+Environment Configuration
+•	Configure .env with required API keys: GEMINI_API_KEY and PINECONE_API_KEY
+Testing
+•	Manual: Run pip install -r requirements.txt and verify no version conflicts occur
+•	Pytest: Create tests/test_env.py to assert that all required environment variables are loaded and not None
+
+Phase 2: Data Extraction (Playwright Scraper)
+Targeting the specific Quant Mutual Fund URLs with high-precision selectors.
+Development
+•	Build src/scraper.py using Playwright to handle dynamic content
+specific Quant Mutual Fund URLs :
+https://groww.in/mutual-funds/quant-flexi-cap-fund-direct-growth
+https://groww.in/mutual-funds/quant-small-cap-fund-direct-plan-growth
+https://groww.in/mutual-funds/quant-large-cap-fund-direct-growth
+https://groww.in/mutual-funds/quant-mid-cap-fund-direct-growth
+https://groww.in/mutual-funds/quant-liquid-direct-plan-growth
+https://groww.in/mutual-funds/quant-multi-asset-allocation-fund-direct-growth
+https://groww.in/mutual-funds/amc/quant-mutual-funds
+
+Data Fields to Extract
+•	Expense ratio
+•	ELSS lock-in period
+•	Minimum SIP amount
+•	Exit load
+•	Riskometer
+•	Portfolio Holdings
+•	Historic Returns
+•	Assets Under Management (AUM)
+•	Fund Manager
+•	Inception Date
+•	Fund Category
+Data Cleansing
+•	Remove HTML noise and format data into clean JSON structure
+Testing
+•	Manual: Run scraper for one URL and visually inspect generated JSON file in data/ folder for field completeness
+•	Pytest: Validate JSON schema to ensure keys like Expense ratio and NAV exist with non-null values
+
+Phase 3: Vector Storage (Pinecone Integration)
+Replacing the local vector store with a managed Pinecone index for scalability.
+Development
+•	Implement src/ingest.py to generate embeddings via Gemini and upsert them to Pinecone
+Upsert Logic
+•	Overwrite existing vectors daily using scheme name as unique ID to prevent stale data hallucinations
+Metadata
+•	Include source_url in metadata for citations
+•	Include last_updated timestamp in metadata
+Testing
+•	Manual: Check Pinecone Web Console to confirm vector count matches number of scraped fund pages
+•	Pytest: Perform dummy query to Pinecone index and assert returned metadata contains valid URL
+
+Phase 4: Reasoning & Guardrails
+Implementing the logic that filters user queries and generates answers.
+Guardrails
+•	Build src/processor.py to detect PII (like PAN cards) or investment advice requests
+LLM Configuration
+•	Set up Gemini API with temperature=0 to ensure factual, non-creative responses
+Prompting Strategy
+•	Use system prompt that forces LLM to use only provided context and include source link
+Testing
+•	Manual: Input "Should I invest in Quant Small Cap?" and verify system replies with standard "I cannot provide investment advice" message
+•	Pytest: Use test suite of adversarial prompts (including fake PAN numbers) to ensure PII filter returns block status
+
+Phase 5: User Interface (Streamlit)
+The frontend where users interact with the RAG system.
+Development
+•	Create src/app.py as a Streamlit dashboard
+Freshness Display
+•	Show Last Updated timestamp derived from Pinecone metadata or local logs
+Testing
+•	Manual: Open app and ask for "Expense ratio of Quant Flexi Cap." Verify output matches latest scraped data and includes source link
+•	Pytest: Use streamlit.testing to simulate button click and ensure query pipeline is triggered without crashing
+
+Phase 6: Automation & CI/CD
+Automating the daily refresh of fund data.
+Automation Setup
+•	Set up GitHub Actions workflow in .github/workflows/daily_ingest.yml to trigger Playwright scraper and Pinecone upsert daily
+Testing
+•	Manual: Manually trigger GitHub Action from Actions tab and monitor logs for successful completion of Scrape and Upsert steps
+•	Pytest: Verify workflow file syntax using YAML linter
+
+Project Summary
+Key Deliverables
+1.	Playwright-based web scraper for Quant Mutual Fund data extraction
+2.	Pinecone vector database integration for scalable similarity search
+3.	Gemini-powered RAG system with factual guardrails
+4.	Streamlit user interface with real-time data display
+5.	GitHub Actions automation for daily data refresh
+Technology Stack
+•	Web Scraping: Playwright
+•	Vector Database: Pinecone
+•	LLM & Embeddings: Google Gemini API
+•	Framework: LangChain
+•	Frontend: Streamlit
+•	Testing: Pytest
+•	CI/CD: GitHub Actions
+Project Structure
+project-root/
+├── src/
+│   ├── scraper.py
+│   ├── ingest.py
+│   ├── processor.py
+│   └── app.py
+├── tests/
+│   ├── test_env.py
+│   ├── test_scraper.py
+│   ├── test_ingest.py
+│   └── test_processor.py
+├── data/
+│   └── (scraped JSON files)
+├── .github/
+│   └── workflows/
+│       └── daily_ingest.yml
+├── .env
+├── requirements.txt
+├── .gitignore
+└── README.md
