@@ -43,6 +43,24 @@ def _format_fund_data_as_text(data):
         f"The Riskometer rating for {fund_name} is {data.get('riskometer', 'N/A')}.",
         f"The Fund Manager for {fund_name} is {data.get('fund_manager', 'N/A')}."
     ]
+    
+    # Add top holdings information
+    holdings = data.get("holdings", [])
+    if holdings and len(holdings) > 0:
+        lines.append(f"The Top Holdings of {fund_name} are:")
+        for i, holding in enumerate(holdings[:5], 1):  # Top 5 holdings
+            name = holding.get('name', 'N/A')
+            sector = holding.get('sector', 'N/A')
+            assets = holding.get('assets', 'N/A')
+            lines.append(f"  {i}. {name} ({sector}) - {assets} of assets")
+    
+    # Add sector allocation information
+    sector_allocation = data.get("sector_allocation", {})
+    if sector_allocation and len(sector_allocation) > 0:
+        lines.append(f"The Sector Allocation for {fund_name} is:")
+        for sector, allocation in sector_allocation.items():
+            lines.append(f"  {sector}: {allocation}")
+    
     return " ".join(lines)
 
 

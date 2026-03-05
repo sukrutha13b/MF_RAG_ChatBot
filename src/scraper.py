@@ -75,6 +75,99 @@ def extract_fund_manager(page):
         pass
     return "N/A"
 
+
+def extract_holdings(page):
+    """
+    Extracts top holdings from the Holdings table.
+    Returns a list of dictionaries with stock name, sector, and assets percentage.
+    """
+    holdings = []
+    try:
+        # Look for the Holdings section header
+        holdings_header = page.locator("text=Holdings").first
+        if holdings_header.count() == 0:
+            return holdings
+        
+        # Extract holdings table data using JavaScript evaluation
+        holdings_data = page.evaluate('''() => {
+            const holdings = [];
+            // Try to find the holdings table - usually has headers: Name, Sector, Instruments, Assets
+            const tables = document.querySelectorAll('table');
+            for (const table of tables) {
+                const headers = table.querySelectorAll('th');
+                const headerTexts = Array.from(headers).map(h => h.innerText.trim());
+                
+                // Check if this is the holdings table
+                if (headerTexts.includes('Name') && headerTexts.includes('Sector') && headerTexts.includes('Assets')) {
+                    const rows = Array.from(table.querySelectorAll('tbody tr'));
+                    const topRows = rows.slice(0, 10);  // Get top 10 holdings
+                    for (const row of topRows) {
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length >= 4) {
+                            holdings.push({
+                                name: cells[0]?.innerText?.trim() || '',
+                                sector: cells[1]?.innerText?.trim() || '',
+                                instrument: cells[2]?.innerText?.trim() || '',
+                                assets: cells[3]?.innerText?.trim() || ''
+                            });
+                        }
+                    }
+                    break;
+                }
+            }
+            return holdings;
+        }''')
+        
+        if holdings_data and len(holdings_data) > 0:
+            holdings = holdings_data
+    except Exception as e:
+        print(f"  Warning: failed to extract holdings: {e}")
+    
+    return holdings
+
+
+def extract_sector_allocation(page):
+    """
+    Extracts sector allocation data if available on the page.
+    Returns a dictionary with sector names and their allocation percentages.
+    """
+    sectors = {}
+    try:
+        # Try to find sector allocation section
+        sector_data = page.evaluate('''() => {
+            const sectors = {};
+            // Look for elements containing sector names and percentages
+            const sectorElements = document.querySelectorAll('[class*="sector"], [class*="allocation"]');
+            
+            // Common sector keywords to look for
+            const sectorKeywords = [
+                'Financial', 'Technology', 'Healthcare', 'Energy', 'Consumer', 
+                'Industrials', 'Materials', 'Communication', 'Utilities', 'Real Estate',
+                'Services', 'Construction', 'Automobile', 'Chemicals', 'Metals',
+                'Textiles', 'Capital Goods', 'Consumer Staples', 'Consumer Discretionary'
+            ];
+            
+            // Try to extract from table or list elements
+            const allText = document.body.innerText;
+            for (const sector of sectorKeywords) {
+                // Look for pattern like "Financial 25.5%" or "Financial: 25.5%"
+                const regex = new RegExp(sector + '\\s*[:\\-]?\\s*(\\d+\\.?\\d*)\\s*%', 'i');
+                const match = allText.match(regex);
+                if (match) {
+                    sectors[sector] = match[1] + '%';
+                }
+            }
+            
+            return sectors;
+        }''')
+        
+        if sector_data and len(sector_data) > 0:
+            sectors = sector_data
+    except Exception as e:
+        print(f"  Warning: failed to extract sector allocation: {e}")
+    
+    return sectors
+
 def scrape_fund_page(page, url):
     """Scrapes a single mutual fund scheme page."""
     print(f"Scraping: {url}")
@@ -100,6 +193,10 @@ def scrape_fund_page(page, url):
     if nav == "N/A":
         nav = extract_label_value(page, "Net Asset Value")
     
+    # Extract holdings and sector allocation
+    holdings = extract_holdings(page)
+    sector_allocation = extract_sector_allocation(page)
+    
     data = {
         "fund_name": fund_name.strip(),
         "url": url,
@@ -112,6 +209,8 @@ def scrape_fund_page(page, url):
         "riskometer": extract_contains_text(page, "Risk"), # E.g., "Very High Risk"
         "fund_manager": extract_fund_manager(page),
         "category_average_returns": extract_label_value(page, "Category average"),
+        "holdings": holdings,
+        "sector_allocation": sector_allocation,
     }
     
     # Handle specific fields like Exit Load and Riskometer if N/A
