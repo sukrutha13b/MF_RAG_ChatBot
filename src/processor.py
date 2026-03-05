@@ -208,9 +208,15 @@ def process_query(user_query: str, vectorstore=None) -> str:
     
     # 4. Enforce Source Appending if LLM missed it or failed
     if "Source:" not in answer and sources:
-        # Just grab the first primary source URL for simplicity
-        primary_source = list(sources)[0]
-        answer += f"\n\nSource: [Link]({primary_source})"
+        sources_list = list(sources)
+        if len(sources_list) == 1:
+            # Single source - simple format
+            answer += f"\n\nSource: [Link]({sources_list[0]})"
+        else:
+            # Multiple sources - list them all
+            answer += "\n\nSources:\n"
+            for i, source in enumerate(sources_list, 1):
+                answer += f"{i}. [Link]({source})\n"
 
     return answer
 
