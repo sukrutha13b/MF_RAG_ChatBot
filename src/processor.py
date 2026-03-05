@@ -206,17 +206,43 @@ def process_query(user_query: str, vectorstore=None) -> str:
     
     answer = response.content
     
-    # 4. Enforce Source Appending if LLM missed it or failed
-    if "Source:" not in answer and sources:
-        sources_list = list(sources)
-        if len(sources_list) == 1:
-            # Single source - simple format
-            answer += f"\n\nSource: [Link]({sources_list[0]})"
-        else:
-            # Multiple sources - list them all
-            answer += "\n\nSources:\n"
-            for i, source in enumerate(sources_list, 1):
-                answer += f"{i}. [Link]({source})\n"
+    # 4. Enforce Source Appending - only for funds mentioned in the answer
+    if "Source:" not in answer:
+        # Map fund names to their sources from retrieved docs
+        fund_to_source = {}
+        for doc in docs:
+            fund_name = doc.metadata.get("fund_name", "")
+            url = doc.metadata.get("source_url", "")
+            if fund_name and url and url != "N/A":
+                fund_to_source[fund_name.lower()] = url
+        
+        # Find which funds are actually mentioned in the answer
+        answer_lower = answer.lower()
+        relevant_sources = []
+        for fund_name, url in fund_to_source.items():
+            # Check if fund name (or key parts) appears in the answer
+            fund_parts = fund_name.replace("quant ", "").replace(" fund", "").replace(" direct", "").replace(" growth", "").split()
+            # Check if any significant part of fund name is in answer
+            for part in fund_parts:
+                if len(part) > 3 and part in answer_lower:
+                    relevant_sources.append(url)
+                    break
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_sources = []
+        for url in relevant_sources:
+            if url and url not in seen:
+                seen.add(url)
+                unique_sources.append(url)
+        
+        if unique_sources:
+            if len(unique_sources) == 1:
+                answer += f"\n\nSource: [Link]({unique_sources[0]})"
+            else:
+                answer += "\n\nSources:\n"
+                for i, source in enumerate(unique_sources, 1):
+                    answer += f"{i}. [Link]({source})\n"
 
     return answer
 
