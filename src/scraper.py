@@ -251,20 +251,63 @@ def scrape_amc_page(page, url):
 
     return data
 
+def scrape_with_retry(page, url, max_retries=3):
+    """Scrape a URL with retry logic for bot detection."""
+    for attempt in range(max_retries):
+        try:
+            if "/amc/" in url:
+                data = scrape_amc_page(page, url)
+            else:
+                data = scrape_fund_page(page, url)
+            
+            # Check if we got blocked (fund_name contains "Welcome" or "Groww")
+            fund_name = data.get("fund_name", "")
+            if "Welcome" in fund_name or "Groww" in fund_name or data.get("expense_ratio") == "N/A":
+                if attempt < max_retries - 1:
+                    print(f"  Bot detection triggered, retrying... (attempt {attempt + 2}/{max_retries})")
+                    import time
+                    time.sleep(3 + attempt * 2)  # Increasing delay
+                    continue
+            
+            return data
+        except Exception as e:
+            if attempt < max_retries - 1:
+                print(f"  Error occurred, retrying... (attempt {attempt + 2}/{max_retries}): {e}")
+                import time
+                time.sleep(3 + attempt * 2)
+            else:
+                raise e
+    return data
+
+
 def main():
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        # Launch browser with more realistic settings
+        browser = p.chromium.launch(
+            headless=True,
+            args=['--disable-blink-features=AutomationControlled']
         )
+        
+        # Create context with more realistic browser fingerprint
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            viewport={"width": 1920, "height": 1080},
+            locale="en-US",
+            timezone_id="Asia/Kolkata",
+        )
+        
+        # Add script to remove webdriver property
+        context.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+        """)
+        
         page = context.new_page()
 
         for url in URLS:
             try:
-                if "/amc/" in url:
-                    data = scrape_amc_page(page, url)
-                else:
-                    data = scrape_fund_page(page, url)
+                data = scrape_with_retry(page, url)
                 
                 # Create a file-system safe name
                 filename = url.split('/')[-1] + ".json"
