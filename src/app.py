@@ -36,10 +36,16 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+@st.cache_resource(show_spinner=False)
+def get_cached_vector_store():
+    """Caches the vector store connection."""
+    return get_vector_store()
+
+@st.cache_data(ttl=3600, show_spinner=False)
 def get_last_updated():
-    """Retrieves the last updated timestamp from Pinecone metadata."""
+    """Retrieves and caches the last updated timestamp from Pinecone metadata."""
     try:
-        vectorstore = get_vector_store()
+        vectorstore = get_cached_vector_store()
         # Querying for a common term to get some metadata
         results = vectorstore.similarity_search("Quant", k=1)
         if results:
@@ -92,7 +98,9 @@ if prompt := st.chat_input("Ask about Quant Mutual Funds..."):
     with st.chat_message("assistant"):
         with st.spinner("Analyzing data..."):
             try:
-                response = process_query(prompt)
+                # Use cached vector store to speed up response
+                vectorstore = get_cached_vector_store()
+                response = process_query(prompt, vectorstore=vectorstore)
                 st.markdown(response)
                 # Add assistant response to history
                 st.session_state.messages.append({"role": "assistant", "content": response})

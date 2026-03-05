@@ -62,32 +62,35 @@ def detect_investment_advice(query: str) -> bool:
 
 # --- RAG Setup ---
 
-def get_vector_store(max_retries=3):
+def get_vector_store(max_retries=3, test_connection=False):
     pinecone_api_key = os.getenv("PINECONE_API_KEY")
     if not pinecone_api_key:
         raise ValueError("PINECONE_API_KEY env var is missing.")
     
     # Initialize connection
     pc = Pinecone(api_key=pinecone_api_key)
+    
+    # Basic check for index existence (fast)
     if INDEX_NAME not in [idx["name"] for idx in pc.list_indexes()]:
         raise ValueError(f"Index {INDEX_NAME} not found on Pinecone.")
     
-    # Initialize embeddings with retry logic for timeout issues
     last_error = None
     for attempt in range(max_retries):
         try:
             embeddings = GoogleGenerativeAIEmbeddings(
                 model=EMBEDDING_MODEL,
-                request_options={"timeout": 60}  # Increase timeout to 60 seconds
+                request_options={"timeout": 60}
             )
-            # Test the embeddings with a simple query to verify connection
-            _ = embeddings.embed_query("test")
+            
+            if test_connection:
+                # Only test if explicitly requested (e.g., during startup)
+                _ = embeddings.embed_query("test")
+                
             return PineconeVectorStore(index_name=INDEX_NAME, embedding=embeddings)
         except Exception as e:
             last_error = e
             if attempt < max_retries - 1:
-                wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
-                time.sleep(wait_time)
+                time.sleep(2 ** attempt)
             else:
                 raise last_error
 
@@ -115,7 +118,7 @@ Helpful Answer:"""
     )
 
 
-def process_query(user_query: str) -> str:
+def process_query(user_query: str, vectorstore=None) -> str:
     """
     Main entry point for handling a user query.
     Applies guardrails, retrieves context, and queries the LLM.
@@ -128,10 +131,11 @@ def process_query(user_query: str) -> str:
         return "I am an informational bot and cannot provide subjective investment advice or recommendations."
 
     # 2. Retrieve Context
-    try:
-        vectorstore = get_vector_store()
-    except Exception as e:
-        return f"Error connecting to vector database: {e}"
+    if vectorstore is None:
+        try:
+            vectorstore = get_vector_store()
+        except Exception as e:
+            return f"Error connecting to vector database: {e}"
 
     # Fetch top 3 relevant chunks with retry for embedding timeouts
     docs = []
