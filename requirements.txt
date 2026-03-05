@@ -15,15 +15,16 @@ playwright==1.41.0
 pinecone==5.1.0
 
 # --- LLM & Embeddings (Phase 3 & 4) ---
-langchain==0.3.0
-langchain-google-genai==2.0.0
+langchain==0.3.13
+langchain-core==0.3.28
+langchain-google-genai==2.0.7
 langchain-pinecone==0.2.0
 
 # --- Environment Management ---
 python-dotenv==1.0.0
 
 # --- Frontend UI (Phase 5) ---
-streamlit==1.30.0
+streamlit==1.40.0
 
 # --- Testing ---
 pytest==8.0.0
