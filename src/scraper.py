@@ -95,9 +95,15 @@ def scrape_fund_page(page, url):
     if inception == "N/A":
         inception = extract_label_value(page, "Date of Incorporation")
         
+    # NAV extraction - usually displayed prominently on the page
+    nav = extract_label_value(page, "NAV")
+    if nav == "N/A":
+        nav = extract_label_value(page, "Net Asset Value")
+    
     data = {
         "fund_name": fund_name.strip(),
         "url": url,
+        "nav": nav,
         "expense_ratio": extract_label_value(page, "Expense ratio"),
         "aum": aum,
         "min_sip": extract_label_value(page, "Min. for SIP"),

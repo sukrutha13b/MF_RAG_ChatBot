@@ -34,6 +34,7 @@ def _format_fund_data_as_text(data):
     # Scheme layout
     lines = [
         f"The Mutual Fund scheme is called {fund_name}.",
+        f"The NAV (Net Asset Value) of {fund_name} is {data.get('nav', 'N/A')}.",
         f"The Expense Ratio of {fund_name} is {data.get('expense_ratio', 'N/A')}.",
         f"The Total Assets Under Management (AUM) or Fund Size of {fund_name} is {data.get('aum', 'N/A')}.",
         f"The Minimum SIP amount for {fund_name} is {data.get('min_sip', 'N/A')}.",
