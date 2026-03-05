@@ -78,7 +78,7 @@ def extract_fund_manager(page):
 
 def extract_holdings(page):
     """
-    Extracts top holdings from the Holdings table.
+    Extracts ALL holdings from the Holdings table.
     Returns a list of dictionaries with stock name, sector, and assets percentage.
     """
     holdings = []
@@ -100,16 +100,24 @@ def extract_holdings(page):
                 // Check if this is the holdings table
                 if (headerTexts.includes('Name') && headerTexts.includes('Sector') && headerTexts.includes('Assets')) {
                     const rows = Array.from(table.querySelectorAll('tbody tr'));
-                    const topRows = rows.slice(0, 10);  // Get top 10 holdings
-                    for (const row of topRows) {
+                    // Extract ALL holdings, not just top 10
+                    for (const row of rows) {
                         const cells = row.querySelectorAll('td');
                         if (cells.length >= 4) {
-                            holdings.push({
-                                name: cells[0]?.innerText?.trim() || '',
-                                sector: cells[1]?.innerText?.trim() || '',
-                                instrument: cells[2]?.innerText?.trim() || '',
-                                assets: cells[3]?.innerText?.trim() || ''
-                            });
+                            const name = cells[0]?.innerText?.trim() || '';
+                            const sector = cells[1]?.innerText?.trim() || '';
+                            const instrument = cells[2]?.innerText?.trim() || '';
+                            const assets = cells[3]?.innerText?.trim() || '';
+                            
+                            // Skip empty rows
+                            if (name && assets) {
+                                holdings.push({
+                                    name: name,
+                                    sector: sector,
+                                    instrument: instrument,
+                                    assets: assets
+                                });
+                            }
                         }
                     }
                     break;
@@ -120,6 +128,7 @@ def extract_holdings(page):
         
         if holdings_data and len(holdings_data) > 0:
             holdings = holdings_data
+            print(f"  -> Extracted {len(holdings)} holdings")
     except Exception as e:
         print(f"  Warning: failed to extract holdings: {e}")
     
@@ -188,10 +197,31 @@ def scrape_fund_page(page, url):
     if inception == "N/A":
         inception = extract_label_value(page, "Date of Incorporation")
         
-    # NAV extraction - usually displayed prominently on the page
-    nav = extract_label_value(page, "NAV")
-    if nav == "N/A":
-        nav = extract_label_value(page, "Net Asset Value")
+    # NAV extraction - try multiple methods to get the NAV value
+    nav = "N/A"
+    try:
+        # Method 1: Look for NAV in the page text with regex pattern
+        page_text = page.locator("body").inner_text()
+        import re
+        # Look for pattern like "NAV: 04 Mar '26₹250.20" - NAV comes after date
+        # The format is: NAV: DD MMM 'YY₹XXX.XX
+        nav_match = re.search(r"NAV[:\s]*\d{2}\s+\w+\s+'\d{2}₹?([\d,]+\.\d+)", page_text, re.IGNORECASE)
+        if nav_match:
+            nav_value = nav_match.group(1).replace(',', '')
+            nav = "₹" + nav_value
+        else:
+            # Fallback: Look for any ₹XXX.XX pattern after NAV text
+            nav_match = re.search(r'NAV[:\s]*.*?₹([\d,]+\.\d+)', page_text, re.IGNORECASE | re.DOTALL)
+            if nav_match:
+                nav_value = nav_match.group(1).replace(',', '')
+                nav = "₹" + nav_value
+            else:
+                # Method 2: Try to find NAV near the fund name/header
+                nav = extract_label_value(page, "NAV")
+                if nav == "N/A":
+                    nav = extract_label_value(page, "Net Asset Value")
+    except Exception as e:
+        nav = "N/A"
     
     # Extract holdings and sector allocation
     holdings = extract_holdings(page)
