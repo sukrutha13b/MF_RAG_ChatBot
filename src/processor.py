@@ -123,6 +123,20 @@ Helpful Answer:"""
     )
 
 
+def _is_list_all_query(query: str) -> bool:
+    """
+    Detects if the user is asking for a list of all funds or all items.
+    These queries need to retrieve more documents (k=10) instead of default (k=3).
+    """
+    query_lower = query.lower()
+    list_keywords = [
+        "list all", "all funds", "give a list", "show all", "what are all",
+        "tell me all", "list of", "all available", "minimum sip for all",
+        "expense ratio of all", "aum of all", "fund manager of all"
+    ]
+    return any(kw in query_lower for kw in list_keywords)
+
+
 def process_query(user_query: str, vectorstore=None) -> str:
     """
     Main entry point for handling a user query.
@@ -142,12 +156,16 @@ def process_query(user_query: str, vectorstore=None) -> str:
         except Exception as e:
             return f"Error connecting to vector database: {e}"
 
-    # Fetch top 3 relevant chunks with retry for embedding timeouts
+    # Determine how many documents to retrieve
+    # Use k=10 for "list all" queries, k=3 for specific queries
+    k_value = 10 if _is_list_all_query(user_query) else 3
+    
+    # Fetch relevant chunks with retry for embedding timeouts
     docs = []
     max_search_retries = 3
     for attempt in range(max_search_retries):
         try:
-            docs = vectorstore.similarity_search(user_query, k=3)
+            docs = vectorstore.similarity_search(user_query, k=k_value)
             break
         except Exception as e:
             if "504" in str(e) or "Deadline Exceeded" in str(e):
