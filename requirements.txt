@@ -7,7 +7,7 @@
 playwright>=1.40.0
 
 # --- Vector Database (Phase 3) ---
-pinecone>=6.0.0
+pinecone-client>=5.0.0,<6.0.0
 
 # --- LLM & Embeddings (Phase 3 & 4) ---
 langchain>=0.3.0

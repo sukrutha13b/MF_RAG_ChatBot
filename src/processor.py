@@ -5,6 +5,12 @@ from dotenv import load_dotenv
 # Try importing LangChain components, with a fallback
 try:
     from pinecone import Pinecone
+except ImportError:
+    # Fallback for older pinecone-client package
+    import pinecone
+    Pinecone = pinecone.Pinecone
+
+try:
     from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
     from langchain_pinecone import PineconeVectorStore
     from langchain_core.prompts import PromptTemplate
