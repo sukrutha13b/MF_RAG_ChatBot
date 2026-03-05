@@ -3,6 +3,11 @@
 # Phase 1: Environment & Project Foundation
 # ============================================================
 
+# --- Build Tools (Fix for GitHub Actions) ---
+setuptools>=70.1.0
+wheel>=0.43.0
+pyyaml>=6.0.1
+
 # --- Web Scraping (Phase 2) ---
 playwright>=1.40.0
 
