@@ -1,16 +1,12 @@
 import os
-# Suppress deprecated plugin warning
-os.environ["PINECONE_SKIP_PLUGIN_CHECK"] = "true"
 import re
 from dotenv import load_dotenv
 
-# Try importing LangChain components, with a fallback
-try:
-    from pinecone import Pinecone
-except ImportError:
-    # Fallback for older pinecone-client package
-    import pinecone
-    Pinecone = pinecone.Pinecone
+# Set this BEFORE importing pinecone to skip plugin check
+os.environ["PINECONE_SKIP_PLUGIN_CHECK"] = "true"
+os.environ["PINECONE_DISABLE_DEPRECATION_WARNINGS"] = "true"
+
+from pinecone import Pinecone
 
 try:
     from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
