@@ -64,8 +64,12 @@ def detect_investment_advice(query: str) -> bool:
 
 def get_vector_store(max_retries=3, test_connection=False):
     pinecone_api_key = os.getenv("PINECONE_API_KEY")
+    gemini_api_key = os.getenv("GEMINI_API_KEY")
+    
     if not pinecone_api_key:
         raise ValueError("PINECONE_API_KEY env var is missing.")
+    if not gemini_api_key:
+        raise ValueError("GEMINI_API_KEY env var is missing.")
     
     # Initialize connection
     pc = Pinecone(api_key=pinecone_api_key)
@@ -79,6 +83,7 @@ def get_vector_store(max_retries=3, test_connection=False):
         try:
             embeddings = GoogleGenerativeAIEmbeddings(
                 model=EMBEDDING_MODEL,
+                google_api_key=gemini_api_key,  # Explicitly pass API key
                 request_options={"timeout": 60}
             )
             
