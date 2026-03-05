@@ -1,5 +1,6 @@
 import os
 import re
+import time
 from dotenv import load_dotenv
 
 # Set this BEFORE importing pinecone to skip plugin check
@@ -61,7 +62,7 @@ def detect_investment_advice(query: str) -> bool:
 
 # --- RAG Setup ---
 
-def get_vector_store():
+def get_vector_store(max_retries=3):
     pinecone_api_key = os.getenv("PINECONE_API_KEY")
     if not pinecone_api_key:
         raise ValueError("PINECONE_API_KEY env var is missing.")
@@ -70,9 +71,25 @@ def get_vector_store():
     pc = Pinecone(api_key=pinecone_api_key)
     if INDEX_NAME not in [idx["name"] for idx in pc.list_indexes()]:
         raise ValueError(f"Index {INDEX_NAME} not found on Pinecone.")
-        
-    embeddings = GoogleGenerativeAIEmbeddings(model=EMBEDDING_MODEL)
-    return PineconeVectorStore(index_name=INDEX_NAME, embedding=embeddings)
+    
+    # Initialize embeddings with retry logic for timeout issues
+    last_error = None
+    for attempt in range(max_retries):
+        try:
+            embeddings = GoogleGenerativeAIEmbeddings(
+                model=EMBEDDING_MODEL,
+                request_options={"timeout": 60}  # Increase timeout to 60 seconds
+            )
+            # Test the embeddings with a simple query to verify connection
+            _ = embeddings.embed_query("test")
+            return PineconeVectorStore(index_name=INDEX_NAME, embedding=embeddings)
+        except Exception as e:
+            last_error = e
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                time.sleep(wait_time)
+            else:
+                raise last_error
 
 
 def build_qa_prompt() -> PromptTemplate:
@@ -116,8 +133,19 @@ def process_query(user_query: str) -> str:
     except Exception as e:
         return f"Error connecting to vector database: {e}"
 
-    # Fetch top 3 relevant chunks
-    docs = vectorstore.similarity_search(user_query, k=3)
+    # Fetch top 3 relevant chunks with retry for embedding timeouts
+    docs = []
+    max_search_retries = 3
+    for attempt in range(max_search_retries):
+        try:
+            docs = vectorstore.similarity_search(user_query, k=3)
+            break
+        except Exception as e:
+            if "504" in str(e) or "Deadline Exceeded" in str(e):
+                if attempt < max_search_retries - 1:
+                    time.sleep(2 ** attempt)
+                    continue
+            return f"Error retrieving context: {e}"
     
     if not docs:
         return "I don't know based on the available data. (No context retrieved)"
