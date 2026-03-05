@@ -66,6 +66,12 @@ with st.sidebar:
     st.markdown(f"**Data Freshness:**")
     st.code(last_updated)
     
+    # Debug mode toggle
+    if "debug_mode" not in st.session_state:
+        st.session_state.debug_mode = False
+    debug_mode = st.checkbox("Debug Mode", value=st.session_state.debug_mode)
+    st.session_state.debug_mode = debug_mode
+    
     st.markdown("---")
     st.markdown("### Guardrails")
     st.warning("• No PII (PAN/Aadhaar)\n• No Investment Advice")
@@ -100,11 +106,20 @@ if prompt := st.chat_input("Ask about Quant Mutual Funds..."):
             try:
                 # Use cached vector store to speed up response
                 vectorstore = get_cached_vector_store()
+                
+                # Debug mode: show retrieved context
+                if st.session_state.get("debug_mode", False):
+                    docs = vectorstore.similarity_search(prompt, k=3)
+                    st.write("**Debug - Retrieved Context:**")
+                    for i, doc in enumerate(docs, 1):
+                        st.write(f"{i}. {doc.metadata.get('fund_name', 'Unknown')} - {doc.page_content[:150]}...")
+                
                 response = process_query(prompt, vectorstore=vectorstore)
                 st.markdown(response)
                 # Add assistant response to history
                 st.session_state.messages.append({"role": "assistant", "content": response})
             except Exception as e:
-                error_msg = f"An error occurred: {e}"
+                import traceback
+                error_msg = f"An error occurred: {e}\n\n{traceback.format_exc()}"
                 st.error(error_msg)
-                st.session_state.messages.append({"role": "assistant", "content": error_msg})
+                st.session_state.messages.append({"role": "assistant", "content": f"An error occurred: {e}"})
