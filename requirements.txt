@@ -7,7 +7,7 @@
 playwright>=1.40.0
 
 # --- Vector Database (Phase 3) ---
-pinecone-client>=5.0.0,<6.0.0
+pinecone-client==5.0.1
 
 # --- LLM & Embeddings (Phase 3 & 4) ---
 langchain>=0.3.0
@@ -22,3 +22,4 @@ streamlit>=1.30.0
 
 # --- Testing ---
 pytest>=8.0.0
+

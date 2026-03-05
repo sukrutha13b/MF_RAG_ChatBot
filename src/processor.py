@@ -1,4 +1,6 @@
 import os
+# Suppress deprecated plugin warning
+os.environ["PINECONE_SKIP_PLUGIN_CHECK"] = "true"
 import re
 from dotenv import load_dotenv
 
