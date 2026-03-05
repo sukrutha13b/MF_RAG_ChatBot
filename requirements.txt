@@ -7,12 +7,12 @@
 playwright>=1.40.0
 
 # --- Vector Database (Phase 3) ---
-pinecone>=3.0.0
+pinecone==5.0.1
 
 # --- LLM & Embeddings (Phase 3 & 4) ---
 langchain>=0.2.0
 langchain-google-genai>=1.0.0
-langchain-pinecone>=0.1.0
+langchain-pinecone==0.1.1
 
 # --- Environment Management ---
 python-dotenv>=1.0.0
