@@ -41,7 +41,7 @@ def get_cached_vector_store():
     """Caches the vector store connection."""
     return get_vector_store()
 
-@st.cache_data(ttl=3600, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)  # Cache for 5 minutes to show fresh updates
 def get_last_updated():
     """Retrieves and caches the last updated timestamp from Pinecone metadata."""
     try:
